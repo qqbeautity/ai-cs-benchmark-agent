@@ -1,0 +1,125 @@
+{
+  "_note": "占位示例 —— 产品与来源均为虚构，仅用于验证报告的渲染路径与类型，不是真实调研结果。真实数据请运行 npm run fixture --force 覆盖本文件。",
+  "_placeholder": true,
+  "goal": "AI 客服产品选型与市场机会分析",
+  "generatedAt": "2026-09-14T00:00:00.000Z",
+  "products": [
+    {
+      "status": "done",
+      "name": "示例产品 A（虚构）",
+      "officialUrl": "https://example-a.invalid/",
+      "oneLiner": "面向中型电商的对话式客服机器人",
+      "targetCustomer": "月咨询量 1 万–50 万的中型电商团队",
+      "confirmedDimensions": 8,
+      "findings": [
+        { "dimension": "positioning", "state": "supported", "summary": "自述定位为电商垂直客服机器人。", "hasEvidence": true },
+        { "dimension": "channels", "state": "supported", "summary": "网页、App、微信、企业微信。", "hasEvidence": true },
+        { "dimension": "aiBot", "state": "supported", "summary": "支持多轮对话与意图识别。", "hasEvidence": true },
+        { "dimension": "knowledgeBase", "state": "supported", "summary": "支持文档上传与自动切分。", "hasEvidence": true },
+        { "dimension": "humanHandoff", "state": "partial", "summary": "支持转人工，但仅限工作时间路由。", "hasEvidence": true },
+        { "dimension": "workflow", "state": "partial", "summary": "提供可视化编排，复杂分支需企业版。", "hasEvidence": true },
+        { "dimension": "analytics", "state": "supported", "summary": "提供会话量与解决率看板。", "hasEvidence": true },
+        { "dimension": "integrations", "state": "unknown", "summary": "", "hasEvidence": false },
+        { "dimension": "security", "state": "unknown", "summary": "", "hasEvidence": false },
+        { "dimension": "pricing", "state": "partial", "summary": "公开起步价，高级功能需联系销售。", "hasEvidence": true }
+      ],
+      "claims": [
+        { "kind": "verified", "text": "官网列出网页、App、微信三个接入渠道。", "sourceIds": ["S1"] },
+        { "kind": "verified", "text": "定价页列出按坐席数计费的起步套餐。", "sourceIds": ["S2"] },
+        { "kind": "inferred", "text": "从渠道与定价结构看，该产品更偏向中小规模电商团队。", "sourceIds": [] },
+        {
+          "kind": "unconfirmed",
+          "text": "第三方评测称其意图识别准确率约 92%。",
+          "sourceIds": [],
+          "downgradedFrom": "verified",
+          "downgradeReason": "cited_source_not_found"
+        }
+      ],
+      "sources": [
+        { "id": "S1", "title": "示例产品 A 官网 - 功能", "url": "https://example-a.invalid/features", "retrievedAt": "2026-09-14", "tier": "official" },
+        { "id": "S2", "title": "示例产品 A 官网 - 定价", "url": "https://example-a.invalid/pricing", "retrievedAt": "2026-09-14", "tier": "official" },
+        { "id": "S3", "title": "某评测站对示例产品 A 的测评", "url": "https://review-example.invalid/a", "retrievedAt": "2026-09-14", "tier": "thirdParty" }
+      ],
+      "gaps": [
+        "以下维度公开资料不足：integrations、security。建议查看官方文档或申请试用确认。",
+        "1 条结论因模型引用的来源编号无法核实，已降级为「待确认」。"
+      ]
+    },
+    {
+      "status": "done",
+      "name": "示例产品 B（虚构）",
+      "officialUrl": "https://example-b.invalid/",
+      "oneLiner": "面向大型企业的全渠道联络中心套件",
+      "targetCustomer": "有合规要求的大型企业与金融、政企客户",
+      "confirmedDimensions": 6,
+      "findings": [
+        { "dimension": "positioning", "state": "supported", "summary": "定位为企业级联络中心平台。", "hasEvidence": true },
+        { "dimension": "channels", "state": "supported", "summary": "电话、邮件、网页、App 全渠道。", "hasEvidence": true },
+        { "dimension": "aiBot", "state": "partial", "summary": "机器人能力依赖合作伙伴提供。", "hasEvidence": true },
+        { "dimension": "knowledgeBase", "state": "unknown", "summary": "", "hasEvidence": false },
+        { "dimension": "humanHandoff", "state": "supported", "summary": "内置坐席工作台与技能路由。", "hasEvidence": true },
+        { "dimension": "workflow", "state": "supported", "summary": "提供工单流程与 SLA 管理。", "hasEvidence": true },
+        { "dimension": "analytics", "state": "partial", "summary": "报表功能需单独购买分析模块。", "hasEvidence": true },
+        { "dimension": "integrations", "state": "unknown", "summary": "", "hasEvidence": false },
+        { "dimension": "security", "state": "partial", "summary": "官网提及支持私有化部署。", "hasEvidence": true },
+        { "dimension": "pricing", "state": "unknown", "summary": "", "hasEvidence": false }
+      ],
+      "claims": [
+        { "kind": "verified", "text": "官网说明机器人能力由合作伙伴提供。", "sourceIds": ["S1"] },
+        { "kind": "verified", "text": "官网提及支持私有化部署选项。", "sourceIds": ["S2"] },
+        { "kind": "inferred", "text": "AI 能力非自研，产品重心在坐席工作台与流程管理。", "sourceIds": [] }
+      ],
+      "sources": [
+        { "id": "S1", "title": "示例产品 B 官网 - 平台能力", "url": "https://example-b.invalid/platform", "retrievedAt": "2026-09-14", "tier": "official" },
+        { "id": "S2", "title": "示例产品 B 官网 - 部署方式", "url": "https://example-b.invalid/deployment", "retrievedAt": "2026-09-14", "tier": "official" }
+      ],
+      "gaps": [
+        "以下维度公开资料不足：knowledgeBase、integrations、pricing。建议查看官方文档或申请试用确认。"
+      ]
+    },
+    {
+      "status": "failed",
+      "error": "Gemini 免费层限流（RPM/RPD 已用尽），已重试 4 次",
+      "retryable": true
+    }
+  ],
+  "insights": {
+    "示例产品 A（虚构）": {
+      "strengths": ["电商场景模板完整", "公开起步价便于预算评估"],
+      "weaknesses": ["转人工受工作时间限制", "复杂工作流需企业版"],
+      "bestFor": "希望快速上线、预算可控的中型电商团队",
+      "pricing": {
+        "mode": "modelOnly",
+        "model": "按坐席数计费的订阅制，另有人工服务费",
+        "note": "公开资料仅描述计费方式，缺少可直接比较的价格数字，因此以表格呈现。",
+        "sourceIds": ["S2"]
+      }
+    },
+    "示例产品 B（虚构）": {
+      "strengths": ["坐席工作台与技能路由成熟", "支持私有化部署"],
+      "weaknesses": ["AI 能力依赖合作伙伴", "分析模块需单独购买"],
+      "bestFor": "有合规与私有化要求的大型企业",
+      "pricing": {
+        "mode": "unknown",
+        "note": "未找到公开定价信息，需联系销售或申请试用"
+      }
+    }
+  },
+  "marketInsights": [
+    {
+      "kind": "inferred",
+      "text": "两个示例产品的重心不同：一个把 AI 机器人作为核心卖点，另一个把 AI 作为坐席工具的补充。",
+      "sourceIds": []
+    },
+    {
+      "kind": "unconfirmed",
+      "text": "第三方来源称某产品的意图识别准确率约 92%，但官方页面未提及，无法核实。",
+      "sourceIds": []
+    }
+  ],
+  "gaps": [
+    "多数示例产品未公开可直接比较的价格，选型时需要索取报价。",
+    "集成能力与安全合规信息在两个产品上都缺少公开细节。",
+    "示例数据仅用于验证渲染路径，请勿用于真实选型决策。"
+  ]
+}
