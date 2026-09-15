@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { generateJson } from "./gemini";
+import { generateJson } from "./llm";
 import { INSIGHT_SYSTEM, buildInsightPrompt } from "./prompts";
 import { bindSources } from "./schema";
 import { DIMENSION_LABELS, deriveProductInsights, isDone, sanitizeText } from "./types";
@@ -91,6 +91,10 @@ async function generateInsights(goal: string, usable: DoneResult[]): Promise<Ins
   const empty: InsightStage = { products: [], marketInsights: [], gaps: [] };
 
   try {
+    // No `schema`: this stage's shape is described in the prompt and validated
+    // by `InsightResponseSchema` below. `buildChatBody` still asks for
+    // `json_object`, so the common failure here is a wrong shape rather than
+    // unparseable text — both land in the same fallback.
     const raw = await generateJson<unknown>({
       systemInstruction: INSIGHT_SYSTEM,
       userContent: buildInsightPrompt(

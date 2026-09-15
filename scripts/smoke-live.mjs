@@ -1,13 +1,20 @@
 #!/usr/bin/env node
 /**
- * Browser smoke test for the *live* report path.
+ * Browser smoke test for the *live* report path's degraded rendering.
  *
  * `smoke.mjs` covers `/report?demo=1`, which reads the bundled fixture. This one
  * seeds a stored task instead, so it exercises the path a real run takes — where
- * the product cards come from the insight request rather than the fixture. With
- * no API keys configured that request fails, which is exactly the case worth
- * checking: the report must still render, falling back to the shared derivation
- * over the validated findings.
+ * the product cards come from the insight request rather than the fixture. That
+ * request is stubbed to return the empty insight stage a failed model call
+ * produces, which is the case worth checking: the report must still render,
+ * falling back to the shared derivation over the validated findings.
+ *
+ * The stub is deliberate, not belt-and-braces. This script used to rely on there
+ * being no API keys configured, and that stopped being true the moment
+ * `.env.local` existed — the request then succeeds against the real model, and
+ * every assertion below still passes, because they describe structure that holds
+ * either way. The degradation path would have gone untested while reporting
+ * green, and `npm run smoke` would have started billing a model call per run.
  *
  *   node scripts/smoke-live.mjs [baseUrl]
  */
@@ -28,7 +35,7 @@ const done = fixture.products
   .map((p) => ({ ...p, gaps: [] }));
 
 const task = {
-  goal: "live 路径验证：不配置 API Key 时的报告页",
+  goal: "live 路径验证：洞察阶段失败时的报告页",
   createdAt: new Date("2026-09-14T08:00:00Z").toISOString(),
   specs: done.map((p, i) => ({
     id: `t_live_${i}`,
@@ -49,6 +56,32 @@ page.on("console", (m) => {
 
 await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
 await page.evaluate((t) => localStorage.setItem("ai-cs-benchmark:last-task", JSON.stringify(t)), task);
+
+// Take the insight stage down on purpose, so the failure is the script's doing
+// rather than a side effect of the machine having no keys.
+//
+// 200 with an empty insight stage, *not* a 5xx — that is what the real route
+// returns when the model is unavailable. `buildReport` swallows insight-stage
+// failures and yields `{products: [], marketInsights: [], gaps: []}` (the
+// `empty` constant in report.ts), so the client never reaches its `.catch`: it
+// renders a successful-but-empty report and falls back to
+// `deriveProductInsights` because `products.length` is 0. A 5xx would exercise
+// the client's error branch instead — a path a real model failure does not take
+// — and would additionally trip the console.error check below for a reason that
+// has nothing to do with the degradation under test.
+await page.route("**/api/research/report", (route) =>
+  route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      goal: task.goal,
+      generatedAt: task.createdAt,
+      products: [],
+      marketInsights: [],
+      gaps: [],
+    }),
+  }),
+);
 
 await page.goto(`${BASE}/report`, { waitUntil: "networkidle" });
 await page.waitForSelector("text=十维能力对比矩阵", { timeout: 20_000 });
@@ -91,4 +124,4 @@ if (failures.length) {
   for (const f of failures) console.error("  -", f);
   process.exit(1);
 }
-console.log("\n✓ live 路径渲染正常（无 API Key 时降级到程序化归纳）");
+console.log("\n✓ live 路径渲染正常（洞察阶段失败时降级到程序化归纳）");

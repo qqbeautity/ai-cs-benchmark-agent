@@ -1,7 +1,8 @@
 import { ConfigError, serverEnv } from "./server-env";
-import { generateJson } from "./gemini";
+import { generateJson } from "./llm";
 import {
   EXTRACTION_RESPONSE_SCHEMA,
+  EXTRACTION_SCHEMA_NAME,
   EXTRACTION_SYSTEM,
   buildExtractionPrompt,
 } from "./prompts";
@@ -107,7 +108,10 @@ export async function researchProduct(
     const raw = await generateJson<unknown>({
       systemInstruction: EXTRACTION_SYSTEM,
       userContent: buildExtractionPrompt(request.name, sources, snippets, officialUrl),
-      responseSchema: EXTRACTION_RESPONSE_SCHEMA as unknown as Record<string, unknown>,
+      schema: {
+        name: EXTRACTION_SCHEMA_NAME,
+        schema: EXTRACTION_RESPONSE_SCHEMA as unknown as Record<string, unknown>,
+      },
     });
 
     const parsed = RawExtractionSchema.safeParse(raw);

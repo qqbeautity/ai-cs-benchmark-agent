@@ -1,8 +1,9 @@
 /**
  * Exponential backoff for rate limits.
  *
- * The Gemini free tier sits around 10-30 RPM and the Tavily free tier is
- * credit-metered, so a 429 in this app is a *routine* event, not an exception.
+ * The model endpoints this app talks to rate-limit per minute, and the Tavily
+ * free tier is credit-metered, so a 429 here is a *routine* event, not an
+ * exception.
  * Without this, a demo stalls in front of the interviewer (PLAN.md §3.3).
  */
 

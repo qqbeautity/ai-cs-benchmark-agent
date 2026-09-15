@@ -27,8 +27,38 @@ const EXPECTED_ON_REPORT = [
   "来源列表",
 ];
 
-/** Anything here reaching the DOM means a key leaked into the bundle. */
-const SECRET_PATTERNS = [/AIza[0-9A-Za-z_-]{20,}/, /tvly-[0-9A-Za-z]{10,}/];
+/**
+ * Anything here reaching the DOM means a key leaked into the bundle.
+ *
+ * Both patterns that used to live here had gone stale. `AIza…` is Gemini, which
+ * this project no longer calls; worse, `/tvly-[0-9A-Za-z]{10,}/` never matched a
+ * real Tavily key, because the `-` in `tvly-dev-…` breaks the run of
+ * alphanumerics three characters in. The net was open for the one format it was
+ * written for.
+ *
+ * There is deliberately no generic `sk-` pattern: DashScope keys interleave `.`
+ * and `-`, so any pattern loose enough to catch them also catches hyphenated
+ * English prose (`sk-averse-decision-making`). EXACT_SECRETS below covers the
+ * key that is actually configured, with no false positives at all.
+ */
+const SECRET_PATTERNS = [/tvly-[A-Za-z0-9._-]{16,}/, /AIza[0-9A-Za-z_-]{20,}/];
+
+/**
+ * The keys this run was configured with, checked literally. A leak is by
+ * definition one of *these* strings showing up in the page, and comparing
+ * against the exact value cannot produce a false alarm. Loaded here rather than
+ * via `node --env-file` so the check works no matter how the script was started.
+ */
+const EXACT_SECRETS = (() => {
+  try {
+    process.loadEnvFile(resolve(ROOT, ".env.local"));
+  } catch {
+    // No .env.local — nothing configured, nothing to compare against.
+  }
+  return ["TAVILY_API_KEY", "LLM_API_KEY"]
+    .map((name) => ({ name, value: process.env[name] }))
+    .filter((s) => typeof s.value === "string" && s.value.length >= 12);
+})();
 
 async function main() {
   await mkdir(OUT, { recursive: true });
@@ -67,6 +97,13 @@ async function main() {
 
     for (const pattern of SECRET_PATTERNS) {
       if (pattern.test(body)) failures.push(`页面正文中出现疑似密钥：${pattern}（${scheme}）`);
+    }
+    // Never echo the value itself — a failure message quoting the key would
+    // put it in the console output this check exists to keep it out of.
+    for (const { name, value } of EXACT_SECRETS) {
+      if (body.includes(value)) {
+        failures.push(`页面正文中出现了 ${name} 的完整值（${scheme}）`);
+      }
     }
 
     // The matrix must not rely on colour alone.

@@ -79,7 +79,7 @@
     },
     {
       "status": "failed",
-      "error": "Gemini 免费层限流（RPM/RPD 已用尽），已重试 4 次",
+      "error": "上游模型限流（RPM/RPD 已用尽），已重试 4 次",
       "retryable": true
     }
   ],

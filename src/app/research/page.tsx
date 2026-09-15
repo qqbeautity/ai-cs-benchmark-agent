@@ -136,7 +136,7 @@ export default function ResearchPage() {
           调研目的：{task.goal}
         </p>
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-          每个产品约需 30–90 秒。为避免触发免费层限流，产品按顺序调研，一个失败不会影响其余产品。
+          每个产品约需 30–90 秒。为避免触发上游限流，产品按顺序调研，一个失败不会影响其余产品。
         </p>
       </div>
 

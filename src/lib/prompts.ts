@@ -1,6 +1,25 @@
 import { DIMENSIONS, DIMENSION_LABELS, type SourceRef } from "./types";
 
-/** Constrains the model to legal dimension ids and coverage states. */
+/**
+ * Name the provider files the schema under. Letters, digits, `_` and `-` only,
+ * max 64 chars — a name outside that set is rejected before the model is even
+ * called, which reads as a mysterious 400.
+ */
+export const EXTRACTION_SCHEMA_NAME = "product_research";
+
+/**
+ * Constrains the model to legal dimension ids and coverage states.
+ *
+ * Every object level carries `additionalProperties: false` and lists all of its
+ * properties in `required`: strict `json_schema` mode rejects a schema that
+ * omits either. `required` is already exhaustive by design — a field the model
+ * may drop is a field `bindFindings` will not see, and a dimension that never
+ * arrives is indistinguishable from one the model judged irrelevant.
+ *
+ * This object is the single source of truth for the output shape: it is both
+ * sent as `response_format` and rendered into the prompt by
+ * `renderSchemaForPrompt`, so the two can never disagree.
+ */
 export const EXTRACTION_RESPONSE_SCHEMA = {
   type: "object",
   properties: {
@@ -26,6 +45,7 @@ export const EXTRACTION_RESPONSE_SCHEMA = {
                 sourceIds: { type: "array", items: { type: "string" } },
               },
               required: ["dimension", "state", "summary", "sourceIds"],
+              additionalProperties: false,
             },
           },
           claims: {
@@ -38,14 +58,17 @@ export const EXTRACTION_RESPONSE_SCHEMA = {
                 sourceIds: { type: "array", items: { type: "string" } },
               },
               required: ["kind", "text", "sourceIds"],
+              additionalProperties: false,
             },
           },
         },
         required: ["name", "oneLiner", "targetCustomer", "dimensions", "claims"],
+        additionalProperties: false,
       },
     },
   },
   required: ["products"],
+  additionalProperties: false,
 } as const;
 
 /**

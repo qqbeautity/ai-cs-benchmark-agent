@@ -36,25 +36,24 @@
 | 三级证据标注 + 来源列表 | 同上 |
 | 创建任务页表单校验 | 冒烟测试覆盖（少于 3 个产品会拦） |
 | 低于 3 个产品、无任务时的空状态 | 冒烟测试覆盖 |
-| **live 路径在没有 API Key 时降级渲染** | `scripts/smoke-live.mjs`：种入任务记录后渲染 `/report`，断言 9 个区块齐全且无控制台报错 |
+| **洞察阶段失败时降级渲染** | `scripts/smoke-live.mjs`：种入任务记录、把洞察请求 stub 成「200 + 空洞察阶段」（模型不可用时路由的真实返回）后渲染 `/report`，断言 9 个区块齐全且无控制台报错 |
 | 来源绑定校验逻辑 | **13 个单元测试** |
 | 指数退避重试逻辑 | **7 个单元测试** |
 | 示例数据结构完整性 | **8 个单元测试**（整份 fixture 过一次 schema） |
 | 信息缺口的文案组装 | **5 个单元测试** |
 | 生产构建 / 类型检查 | `next build` 与 `tsc --noEmit` 均通过 |
 
-**当前测试总数：33 个单元测试 + 3 个浏览器冒烟脚本，全部通过。**
+**当前测试总数：48 个单元测试 + 3 个浏览器冒烟脚本，全部通过。**
 
 ### ❌ 还没验证 / 还没做
 
 | 缺口 | 说明 | 严重程度 |
 |---|---|---|
-| **真实调研链路从未跑通** | 全程没填过 API Key，Tavily 实际抓取、Gemini 实际抽取、真实来源绑定的行为**全部未知** | 🔴 最高 |
+| **端到端链路从未跑通** | 模型层已单独探通（严格模式生效、能关思考、端点连通，都是实测），但 Tavily 实际抓取、真实来源绑定的行为**仍然未知**——一次完整调研都没跑过 | 🔴 最高 |
 | 示例报告是**占位数据** | 产品全是虚构的，只用来验证渲染路径。跑一次 `npm run fixture` 就会换成真实数据 | 🔴 高 |
 | 没有部署 | 还是本地项目，没有公开链接 | 🟡 中 |
-| **不是 git 仓库** | 没有版本控制，`git init` 都没做 | 🟡 中 |
 | `npm run lint` 是坏的 | 脚本存在，但没有 ESLint 依赖和配置，跑起来直接失败 | 🟢 低 |
-| 服务端模块没有测试覆盖 | 单测只覆盖了客户端安全的模块，`research.ts` / `gemini.ts` / `tavily.ts` 无测试 | 🟡 中 |
+| 传输层没有测试覆盖 | 纯逻辑已抽进 `completion.ts` 并有单测；但 `research.ts` / `llm.ts` / `tavily.ts` 里真正碰网络与 Key 的部分仍无测试 | 🟡 中 |
 | 人工核查正确率未做 | PLAN.md 要求抽查 20 条关键事实记录正确率，还没做 | 🟡 中 |
 
 > ⚠️ **重要**：因为示例报告是虚构数据，页面上有一条橙色横幅明确标注「这是占位示例，不是真实调研结果」。**在做完真实调研之前，不要把这个链接当作成果展示。**
@@ -77,9 +76,9 @@ npm run dev        # 默认 3000 端口
 | 服务 | 申请地址 | 免费额度 |
 |---|---|---|
 | Tavily（联网搜索） | https://app.tavily.com/ | 1000 credits / 月 |
-| Gemini（结构化抽取） | https://aistudio.google.com/apikey | 约 10–30 RPM，按账号浮动 |
+| 通义千问（结构化抽取） | https://bailian.console.aliyun.com/ | 新用户有免费额度，之后按量计费 |
 
-两个都**不需要信用卡**。
+两个都**不需要信用卡**。模型层走的是**任何 OpenAI 兼容端点**——想换回 Gemini、DeepSeek 或 Kimi，改 `.env.local` 里的 `LLM_BASE_URL` / `LLM_MODEL` 就行，代码不用动。
 
 ```bash
 cp .env.example .env.local
@@ -87,9 +86,22 @@ cp .env.example .env.local
 npm run dev
 ```
 
+**只填 Key 还不够，`LLM_BASE_URL` 要照抄百炼控制台给你的那个地址。** 它可能长这样：
+
+```
+https://ws-<你的空间 ID>.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+```
+
+这是**工作空间专属域名**，和公开的 `dashscope.aliyuncs.com` 不是一回事。区域或空间对不上会报 `InvalidApiKey`，而那个报错看起来像 Key 本身有问题——所以别照着 `.env.example` 里的示例值猜。
+
+**两个默认设置是有原因的，别顺手改掉：**
+
+- `LLM_JSON_MODE=json_schema` —— `qwen3.8-max` 上实测生效（返回 200，content 严格符合 schema），不是被静默降级成 `json_object`
+- `LLM_DISABLE_THINKING=1` —— Qwen3.8 系列**默认开着思考模式**，而推理 token 和正文一起计费、也一起受 `LLM_MAX_TOKENS` 约束。实测同一个问题：不关烧 50 个 token（38 个是推理），关掉只要 5 个。不关的话十维抽取（输出几千 token）很容易撞上截断
+
 **额度换算**：一次完整演示（5 产品 × 3 次搜索）= 15 credits，1000 ÷ 15 ≈ **每月 66 次**。
 
-> ⚠️ Gemini 免费层下 Google 可能将输入用于改进产品。本项目只处理公开网页，**不要输入企业机密**。
+> ⚠️ 模型服务商可能将输入用于改进产品。本项目只处理公开网页，**不要输入企业机密**。
 
 ---
 
@@ -102,7 +114,7 @@ npm run dev
         ↓
    来源编号化 [S1] [S2] [S3] ...    ← 只有编号进模型，URL 不进
         ↓
-   Gemini 按十维结构化抽取（所有产品合并成 1 次调用）
+   模型按十维结构化抽取（受 json_schema 约束，所有产品合并成 1 次调用）
         ↓
   ★ 程序校验：模型引用的 sourceId 真的存在吗？    ← 项目的核心
         ↓
@@ -158,25 +170,26 @@ src/
 │   ├── types.ts                  ★ 域模型 + 共享推导      313 行
 │   ├── schema.ts                 ★ 来源绑定与校验         139 行
 │   ├── gaps.ts                   信息缺口文案（可测）      33 行
-│   ├── retry.ts                  指数退避                 77 行
+│   ├── retry.ts                  指数退避                 78 行
 │   ├── tavily.ts                 Tavily 客户端           143 行
-│   ├── gemini.ts                 Gemini 客户端           128 行
-│   ├── prompts.ts                所有提示词               149 行
-│   ├── research.ts               单产品编排              178 行
-│   ├── report.ts                 横评合成                124 行
+│   ├── llm.ts                    模型客户端（OpenAI 兼容）106 行
+│   ├── completion.ts             线格式纯逻辑（可测）      208 行
+│   ├── prompts.ts                所有提示词               172 行
+│   ├── research.ts               单产品编排              182 行
+│   ├── report.ts                 横评合成                128 行
 │   ├── fixture.ts                示例数据装载             60 行
-│   ├── server-env.ts             服务端配置（server-only） 43 行
+│   ├── server-env.ts             服务端配置（server-only） 87 行
 │   ├── task-store.ts             localStorage             58 行
 │   └── validate-result.ts        接口边界校验            160 行
 └── fixtures/
     └── shape-example.json        占位示例（虚构产品）
 ```
 
-**合计约 3850 行**（含测试与脚本）。
+**合计约 4600 行**（含测试与脚本）。
 
 ### 一个函数，两个调用方
 
-产品卡片（优势 / 短板 / 适用用户 / 定价模式）由 `types.ts` 里的 `deriveProductInsights` **统一产出**。区别只在于传不传模型散文：服务端 `report.ts` 传 Gemini 归纳的结果，客户端在没有洞察时（降级、占位示例）不传，函数自己回退到从已验证事实里推导。
+产品卡片（优势 / 短板 / 适用用户 / 定价模式）由 `types.ts` 里的 `deriveProductInsights` **统一产出**。区别只在于传不传模型散文：服务端 `report.ts` 传模型归纳的结果，客户端在没有洞察时（降级、占位示例）不传，函数自己回退到从已验证事实里推导。
 
 以前这里有两份实现——报告页复制过一份服务端定价推导，两边各自演化。现在只有一份，且它躺在客户端安全的模块里，所以两边都能用。
 
@@ -196,7 +209,7 @@ src/
 npm run dev            # 开发服务器（3000 端口）
 npm run build          # 生产构建
 npm run typecheck      # 类型检查
-npm test               # 全部单元测试（33 个）
+npm test               # 全部单元测试（48 个）
 npx vitest run src/lib/schema.test.ts      # 只跑一个文件
 npx vitest run -t "降级"                    # 按测试名跑单个用例
 
@@ -207,7 +220,8 @@ npm run fixture        # 用真实 API 生成示例报告（会拒绝覆盖占�
 **注意事项：**
 
 - `npm run smoke` 需要 dev server 跑在 **3111** 端口（`npx next dev -p 3111`），脚本里硬编码了这个端口
-- 三个冒烟脚本：`smoke-home.mjs`（首页与表单校验）、`smoke.mjs`（占位报告，浅色+深色各一遍）、`smoke-live.mjs`（真实路径：种入任务记录，验证没有 API Key 时报告依然能降级渲染）
+- 三个冒烟脚本：`smoke-home.mjs`（首页与表单校验）、`smoke.mjs`（占位报告，浅色+深色各一遍，并扫描页面正文有无密钥泄露）、`smoke-live.mjs`（真实路径：种入任务记录并把洞察请求 stub 成模型不可用时的真实返回，验证洞察失败时报告依然降级渲染）
+- **整套冒烟测试不消耗任何 API 额度**，配没配 Key 都一样
 - 截图输出到 `docs/screenshots/`
 - `npm run lint` **是坏的**，没有 ESLint 配置，用 `npm run typecheck` 代替
 - 报告页是客户端组件，**`curl` 只能拿到 loading 态**，验证内容必须用 Playwright 冒烟测试
@@ -244,12 +258,11 @@ npm run fixture        # 用真实 API 生成示例报告（会拒绝覆盖占�
 
 按优先级：
 
-1. **配 API Key，跑通一次真实调研** ← 当前唯一阻塞项
+1. **跑通一次真实调研**（先跑单个产品）← 当前唯一阻塞项。Key、端点、模型三项都已就位且各自验过，缺的就是这一跑
 2. `npm run fixture` 生成真实示例，替换掉占位数据（横幅会自动消失）
-3. **`git init` + 首次提交**
-4. 部署到 Vercel（见下）
-5. 人工核查 20 条关键事实，记录正确率
-6. 补服务端模块的测试
+3. 部署到 Vercel（见下）
+4. 人工核查 20 条关键事实，记录正确率
+5. 继续补服务端模块的测试——纯逻辑已抽进 `completion.ts` 并覆盖，剩下的是 `llm.ts` 的 `fetch` 传输和 `tavily.ts`
 
 ### 部署说明
 
@@ -257,4 +270,4 @@ npm run fixture        # 用真实 API 生成示例报告（会拒绝覆盖占�
 
 原因：单产品链路耗时 30–90 秒，而 **Netlify 的同步函数上限是 60 秒，且官方明确该限制不随套餐变化、不可配置**（升级付费也没用）。Vercel Hobby 在 Fluid Compute 下是 300 秒，足够。
 
-部署前在 Vercel 项目设置里配置环境变量：`TAVILY_API_KEY`、`GEMINI_API_KEY`、`GEMINI_MODEL`。
+部署前在 Vercel 项目设置里配置环境变量：`TAVILY_API_KEY`、`LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL`、`LLM_JSON_MODE`、`LLM_DISABLE_THINKING`，以及可选的 `LLM_MAX_TOKENS`。**`LLM_BASE_URL` 和 `LLM_MODEL` 在这里算必填**——代码里的兜底默认值指的是公开国内站，和你实际用的工作空间端点不是一回事。完整说明见 `.env.example`。

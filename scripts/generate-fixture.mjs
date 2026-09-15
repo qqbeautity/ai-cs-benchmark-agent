@@ -35,9 +35,9 @@ const PRODUCTS = [
 const GOAL = "AI 客服产品选型与市场机会分析";
 
 async function main() {
-  if (!process.env.TAVILY_API_KEY || !process.env.GEMINI_API_KEY) {
+  if (!process.env.TAVILY_API_KEY || !process.env.LLM_API_KEY) {
     console.error(
-      "缺少 TAVILY_API_KEY / GEMINI_API_KEY。\n" +
+      "缺少 TAVILY_API_KEY / LLM_API_KEY。\n" +
         "请复制 .env.example 为 .env.local 并填写后重试：\n" +
         "  node --env-file=.env.local scripts/generate-fixture.mjs --force",
     );
